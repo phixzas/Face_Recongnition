@@ -4,12 +4,12 @@ import time
 
 import cv2
 import numpy as np
-import tensorflow as tf
 
 
 THRESHOLD = 0.85
 CAMERA_INDEX = 0
 COUNTDOWN_SECONDS = 5
+FACE_RECOGNITION_MODEL = "face_recognition_sface_2021dec.onnx"
 
 
 def app_path(name):
@@ -24,7 +24,7 @@ def load_face_detector():
     return cv2.FaceDetectorYN.create(str(detector_path), "", (320, 320), 0.8, 0.3, 5000)
 
 
-def load_face(image, detector, target_size=(224, 224)):
+def load_face(image, detector):
     height, width = image.shape[:2]
     detector.setInputSize((width, height))
     _, detections = detector.detect(image)
@@ -33,25 +33,25 @@ def load_face(image, detector, target_size=(224, 224)):
 
     detection = max(detections, key=lambda item: item[2] * item[3])
     x, y, box_width, box_height = (int(value) for value in detection[:4])
-    padding_x, padding_y = int(box_width * 0.15), int(box_height * 0.15)
-    x1, y1 = max(0, x - padding_x), max(0, y - padding_y)
-    x2 = min(width, x + box_width + padding_x)
-    y2 = min(height, y + box_height + padding_y)
-    face = cv2.cvtColor(image[y1:y2, x1:x2], cv2.COLOR_BGR2RGB)
-    return cv2.resize(face, target_size), (x, y, box_width, box_height)
+    return detection, (x, y, box_width, box_height)
 
 
-def embedding(image, detector, model):
-    face, box = load_face(image, detector)
-    batch = tf.keras.applications.mobilenet_v2.preprocess_input(
-        face.astype(np.float32)[None, ...]
-    )
-    vector = model.predict(batch, verbose=0)[0]
+def load_face_recognizer():
+    model_path = app_path(FACE_RECOGNITION_MODEL)
+    if not model_path.exists():
+        raise FileNotFoundError(f"Missing face recognition model: {model_path}")
+    return cv2.FaceRecognizerSF.create(str(model_path), "")
+
+
+def embedding(image, detector, recognizer):
+    detection, box = load_face(image, detector)
+    aligned_face = recognizer.alignCrop(image, detection)
+    vector = recognizer.feature(aligned_face)[0]
     vector /= np.linalg.norm(vector) + 1e-8
     return vector, box
 
 
-def capture_and_verify(enrollment, detector, model):
+def capture_and_verify(enrollment, detector, recognizer):
     camera = cv2.VideoCapture(CAMERA_INDEX, cv2.CAP_DSHOW)
     if not camera.isOpened():
         camera.release()
@@ -88,7 +88,7 @@ def capture_and_verify(enrollment, detector, model):
             if key in (ord("q"), 27):
                 return False, None
             if (key == 32 or time.monotonic() - started_at >= COUNTDOWN_SECONDS) and last_box is not None:
-                candidate, _ = embedding(frame, detector, model)
+                candidate, _ = embedding(frame, detector, recognizer)
                 similarity = float(np.dot(enrollment, candidate))
                 return similarity >= THRESHOLD, similarity
     finally:
@@ -101,12 +101,18 @@ def main():
     if not enrollment_path.exists():
         raise FileNotFoundError(f"Missing enrollment file: {enrollment_path}")
 
-    print("Loading face model...")
-    model = tf.keras.applications.MobileNetV2(weights="imagenet", include_top=False, pooling="avg", input_shape=(224, 224, 3))
+    print("Loading face recognition model...")
     detector = load_face_detector()
+    recognizer = load_face_recognizer()
     enrollment = np.load(enrollment_path).astype(np.float32)
     enrollment /= np.linalg.norm(enrollment) + 1e-8
-    unlocked, similarity = capture_and_verify(enrollment, detector, model)
+    expected_size = recognizer.feature(np.zeros((112, 112, 3), dtype=np.uint8)).shape[1]
+    if enrollment.size != expected_size:
+        raise ValueError(
+            f"Enrollment embedding has {enrollment.size} values; "
+            f"SFace requires {expected_size}. Re-enroll your face with the SFace model."
+        )
+    unlocked, similarity = capture_and_verify(enrollment, detector, recognizer)
     if similarity is None:
         print("Cancelled")
         return 1
