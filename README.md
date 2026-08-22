@@ -3,7 +3,7 @@
 **Author:** Mayowa Philips Olusanjo
 [GitHub](https://github.com/phixzas) · [LinkedIn](https://www.linkedin.com/in/mayowa-philips-olusanjo-982663152)
 
-FaceUnlock is a local Windows desktop prototype that verifies a person through a webcam using face detection and an enrolled facial embedding. It provides a live preview, detects the largest face in view, captures a verification frame, and reports whether the result passes the configured similarity threshold.
+FaceUnlock is a local Windows desktop prototype that verifies a person through a webcam using face detection and an enrolled facial embedding. It provides a live preview, detects the largest face i[...]
 
 The project is intended for learning and local experimentation with computer vision. It is not a replacement for Windows authentication.
 
@@ -37,13 +37,13 @@ From the project directory, run:
 python face_unlock.py
 ```
 
-Look at the webcam during the countdown. Press Space to capture immediately, or press Q or Esc to cancel. The application prints the similarity score and either `UNLOCKED` or `LOCKED` before exiting.
+Look at the webcam during the countdown. Press Space to capture immediately, or press Q or Esc to cancel. The application prints the similarity score and either `UNLOCKED` or `LOCKED` before exiti[...]
 
 ## Enrollment Data
 
-The application requires `enrollment_embedding.npy` beside the Python script, or bundled into the executable. This file contains the reference embedding used for verification and is intentionally excluded from the repository because it is biometric data. The embedding must be generated with the same SFace model used by the application; older MobileNetV2 embeddings are not compatible.
+The application requires `enrollment_embedding.npy` beside the Python script, or bundled into the executable. This file contains the reference embedding used for verification and is intentionally [...]
 
-Create or update the enrollment embedding with the enrollment workflow in `Untitled.ipynb`, then run the application again. Capture images in consistent lighting with the face clearly visible and facing the camera.
+Create or update the enrollment embedding with the enrollment workflow in `Untitled.ipynb`, then run the application again. Capture images in consistent lighting with the face clearly visible and [...]
 
 ## Build The Windows Application
 
@@ -70,13 +70,13 @@ The following files are local runtime or biometric data and should not be commit
 - `face_detection_yunet_2023mar.onnx` is the local face-detector model.
 - `build\` and `dist\` contain generated PyInstaller output.
 
-Keep enrollment data private and delete it when it is no longer needed. The application is designed to process the webcam locally; it does not provide a cloud service or remote authentication endpoint.
+Keep enrollment data private and delete it when it is no longer needed. The application is designed to process the webcam locally; it does not provide a cloud service or remote authentication endp[...]
 
 ## Important Security Limitation
 
-This application can verify a face after Windows has already started. A normal Python program or `.exe` cannot unlock the Windows login screen. Windows login facial recognition requires Windows Hello, a compatible infrared camera, and the Windows security infrastructure behind it.
+This application can verify a face after Windows has already started. A normal Python program or `.exe` cannot unlock the Windows login screen. Windows login facial recognition requires Windows He[...]
 
-For actual Windows sign-in, use **Settings -> Accounts -> Sign-in options** to configure Windows Hello Face, a PIN, fingerprint, or a security key. If Windows reports that no camera is compatible with Windows Hello Face, the current webcam does not have the required infrared hardware.
+For actual Windows sign-in, use **Settings -> Accounts -> Sign-in options** to configure Windows Hello Face, a PIN, fingerprint, or a security key. If Windows reports that no camera is compatible [...]
 
 ## Project Structure
 
@@ -94,3 +94,6 @@ enrollment_embedding.npy        Local enrollment data
 
 ## License
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+This project is licensed under the MIT License — see the LICENSE file for details.
